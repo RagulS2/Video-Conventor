@@ -1,0 +1,77 @@
+<header>
+  <span class="badge">Video → Audio</span>
+  <h2>Convert a file</h2>
+  <p>Drop recordings from meetings, lectures, or streams and get studio-quality audio without leaving the browser.</p>
+</header>
+
+<div class="format-selector">
+  <label for="outputFormat">Desired output</label>
+  <div class="select-wrapper">
+    <select
+      id="outputFormat"
+      (change)="onFormatChange($event)"
+      [value]="selectedFormatId()"
+      [disabled]="isConverting() || !formatOptions().length"
+    >
+      <option *ngFor="let option of formatOptions()" [value]="option.id" [disabled]="!option.supported">
+        {{ option.label }} · {{ option.description }}{{ option.supported ? '' : ' — Not supported in this browser' }}
+      </option>
+    </select>
+  </div>
+  <small>Codec libraries load on demand so you only download what you need.</small>
+</div>
+
+<label
+  class="file-drop"
+  [class.dragging]="isDragOver()"
+  [class.busy]="isConverting()"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave($event)"
+  (drop)="onDrop($event)"
+>
+  <input id="fileInput" type="file" accept="video/*,audio/*" (change)="onFileSelected($event)" [disabled]="isConverting()" />
+  <div class="drop-inner">
+    <span class="icon">⬆</span>
+    <p><strong>Select media</strong> or drag & drop here</p>
+    <small>Supports MP4, MOV, MKV, WebM, WAV, FLAC, OGG, and more.</small>
+  </div>
+</label>
+
+<div class="file-meta" *ngIf="selectedFile() as file">
+  <div>
+    <span class="name">{{ file.name }}</span>
+    <span class="size">{{ formatBytes(file.size) }}</span>
+  </div>
+  <button class="link" type="button" (click)="clearSelection()" [disabled]="isConverting()">Clear</button>
+</div>
+
+<div class="actions">
+  <button type="button" (click)="convertSelected()" [disabled]="!selectedFile() || isConverting() || !optionsLoaded()">
+    {{ isConverting() ? 'Converting…' : ('Convert to ' + formatLabel()) }}
+  </button>
+  <button type="button" class="ghost" (click)="cancelConversion()" *ngIf="isConverting()">Cancel</button>
+</div>
+
+<div class="status-block" [class.has-error]="errorMessage()" [class.success]="downloadUrl()">
+  <p>{{ status() }}</p>
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+</div>
+
+<div class="progress-area" *ngIf="isConverting() || progress() > 0">
+  <div class="progress-header">
+    <span>Status</span>
+    <span>{{ progress() }}%</span>
+  </div>
+  <progress [value]="progress()" max="100"></progress>
+</div>
+
+<div class="download" *ngIf="downloadUrl()">
+  <a class="download-link" [href]="downloadUrl()" [download]="(outputFileName() ?? 'audio')">
+    Download {{ outputFileName() || ('audio' + currentFormat().extension) }}
+  </a>
+</div>
+
+<details class="log-view" *ngIf="logs().length">
+  <summary>Conversion log</summary>
+  <pre>{{ logs().join('\n') }}</pre>
+</details>
